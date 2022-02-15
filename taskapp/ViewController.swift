@@ -28,7 +28,6 @@ class ViewController: UIViewController,UITableViewDelegate,UITableViewDataSource
     //searchbarのための箱
     let myRefreshControl = UIRefreshControl()
     var items = [Task]()
-    var currentItems = [Task]()
     
 
     var category :String!
@@ -47,7 +46,7 @@ class ViewController: UIViewController,UITableViewDelegate,UITableViewDataSource
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         //データベースのリスト数=taskArrayの要素数を返す
         //データの数=セルの数を返すメソッド
-        return currentItems.count
+        return taskArray.count
         
     }
     
@@ -58,7 +57,7 @@ class ViewController: UIViewController,UITableViewDelegate,UITableViewDataSource
         
         //taskArrayから該当するデータを取り出してセルに設定
         // Cellに値を設定する
-        let task = currentItems[indexPath.row]
+        let task = taskArray[indexPath.row]
         cell.textLabel?.text = task.title
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd HH:mm"
@@ -104,18 +103,19 @@ class ViewController: UIViewController,UITableViewDelegate,UITableViewDataSource
     }
     //  検索バーに入力があったら呼ばれる
     func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+        
         if searchText == "" {
-            currentItems = items
-            tableView.reloadData()
-            return
-        } else {
-        currentItems = items.filter({ item -> Bool in
-            item.category.lowercased().contains(searchText.lowercased())
-        })
+            taskArray = try! Realm().objects(Task.self).sorted(byKeyPath: "date", ascending: true)
+        }else {
+            let predicate = NSPredicate(format: "category contains [c] %@", searchText)
+            taskArray = realm.objects(Task.self).filter(predicate).sorted(byKeyPath: "date", ascending: true)
+        }
+            
+            
         tableView.reloadData()
         }
-    }
-    
+        
+        
     
     //deleteボタンが押されたときに呼ばれるメソッド
     //UITableViewDataSourceプロトコルのメソッドで、Deleteボタンが押されたときにローカル通知をキャンセルし、データベースからタスクを削除する
@@ -161,5 +161,5 @@ class ViewController: UIViewController,UITableViewDelegate,UITableViewDataSource
         tableView.reloadData()
     }
 
-}
 
+    }
