@@ -40,7 +40,6 @@ class ViewController: UIViewController,UITableViewDelegate,UITableViewDataSource
         tableView.delegate = self
         tableView.dataSource = self
         searchBar.delegate = self
-        
     }
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
@@ -98,6 +97,41 @@ class ViewController: UIViewController,UITableViewDelegate,UITableViewDataSource
         return.delete
     }
     
+    //deleteボタンが押されたときに呼ばれるメソッド
+    //UITableViewDataSourceプロトコルのメソッドで、Deleteボタンが押されたときにローカル通知をキャンセルし、データベースからタスクを削除する
+    func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
+    
+        if editingStyle == .delete {
+            
+            // 削除するタスクを取得する
+            let task = self.taskArray[indexPath.row]
+
+            // ローカル通知をキャンセルする
+            let center = UNUserNotificationCenter.current()
+            center.removePendingNotificationRequests(withIdentifiers: [String(task.id)])
+            
+            // データベースから削除する
+            try! realm.write {
+                self.realm.delete(self.taskArray[indexPath.row])
+                tableView.deleteRows(at: [indexPath], with: .fade)
+            }
+            
+
+            // 未通知のローカル通知一覧をログ出力
+            center.getPendingNotificationRequests { (requests: [UNNotificationRequest]) in
+                for request in requests {
+                    print("/---------------")
+                    print(request)
+                    print("---------------/")
+                    }
+            
+                }
+        }
+    }
+    
+    
+    
+    
     //searchbar
     func searchBar(_ searchBar: UISearchBar, selectedScopeButtonIndexDidChange selectedScope: Int) {
     }
@@ -113,47 +147,9 @@ class ViewController: UIViewController,UITableViewDelegate,UITableViewDataSource
             
             
         tableView.reloadData()
-        }
+    }
         
         
-    
-    //deleteボタンが押されたときに呼ばれるメソッド
-    //UITableViewDataSourceプロトコルのメソッドで、Deleteボタンが押されたときにローカル通知をキャンセルし、データベースからタスクを削除する
-    func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
-    
-        if editingStyle == .delete {
-            // データベースから削除する
-            try! realm.write {
-                self.realm.delete(self.taskArray[indexPath.row])
-                tableView.deleteRows(at: [indexPath], with: .fade)
-            }
-            
-            // 削除するタスクを取得する
-            let task = self.taskArray[indexPath.row]
-
-            // ローカル通知をキャンセルする
-            let center = UNUserNotificationCenter.current()
-            center.removePendingNotificationRequests(withIdentifiers: [String(task.id)])
-
-            // データベースから削除する
-            try! realm.write {
-                self.realm.delete(task)
-                tableView.deleteRows(at: [indexPath], with: .fade)
-            }
-
-            // 未通知のローカル通知一覧をログ出力
-            center.getPendingNotificationRequests { (requests: [UNNotificationRequest]) in
-                for request in requests {
-                    print("/---------------")
-                    print(request)
-                    print("---------------/")
-                    }
-            
-                }
-            }
-            }
-    
-    
     
     // 入力画面から戻ってきた時に TableView を更新させる
     override func viewWillAppear(_ animated: Bool) {
